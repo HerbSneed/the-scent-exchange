@@ -5,7 +5,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useWindowSize } from "../utils/windowSize";
 import { useCurrentUserContext } from "../context/CurrentUser";
 import { QUERY_CURRENT_USER } from "../utils/queries";
-import { SAVE_NEWS } from "../utils/mutations";
 import Footer from "../components/Common/Footer";
 import HeadlineCard from "../components/Common/headline-card";
 import MoreHeadlinesCard from "../components/Common/more-headlines-card";
@@ -16,13 +15,12 @@ const Homepage = () => {
   const [products, setProducts] = useState([]);
   const { get } = axios;
   const { currentUser, isLoggedIn } = useCurrentUserContext();
-  const [newsItems, setNewsItems] = useState([]);
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const navigate = useNavigate();
   const { width } = useWindowSize();
   const [selectedCategory, setSelectedCategory] = useState("Top News");
-  const [saveNewsMutation] = useMutation(SAVE_NEWS);
+
 
   const sliceEnd =
     width >= 1536 ? 4 : width >= 1280 ? 4 : width >= 1024 ? 2 : 1;
@@ -58,25 +56,6 @@ const Homepage = () => {
     navigate(`/category=${encodeURIComponent(category)}`);
   };
 
-  const fetchNewsByLink = async (link) => {
-    try {
-      const response = await get(`/api/search?searchQuery=${link}`);
-      return response;
-    } catch (error) {
-      console.error("Error fetching news by link:", error);
-      return null;
-    }
-  };
-
-  const fetchUsHeadlines = async () => {
-    try {
-      const response = await get("/api/usheadlines");
-      return response;
-    } catch (error) {
-      console.error("Error fetching US headlines:", error);
-      return null;
-    }
-  };
 
   const fetchUserHeadlines = async (category) => {
     try {

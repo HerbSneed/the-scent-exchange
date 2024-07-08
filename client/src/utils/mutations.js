@@ -4,85 +4,38 @@ import { gql } from "@apollo/client";
 export const LOGIN_USER = gql`
   mutation login($email: String!, $password: String!) {
     login(email: $email, password: $password) {
-      currentUser {
-        email
-        firstName
-        lastName
-        _id
-        userDefaultNews
-      }
       token
+      currentUser {
+        _id
+        email
+        userName
+      }
     }
   }
 `;
 
 // Mutation to register a new user
 export const REGISTER_USER = gql`
-  mutation register(
-    $firstName: String!
-    $lastName: String!
+  mutation registerUser(
+    $userName: String!
     $email: String!
     $password: String!
-    $userDefaultNews: String!
+    $profilePicture: String
   ) {
-    register(
-      firstName: $firstName
-      lastName: $lastName
+    registerUser(
+      userName: $userName
       email: $email
       password: $password
-      userDefaultNews: $userDefaultNews
+      profilePicture: $profilePicture
     ) {
       currentUser {
-        firstName
-        lastName
-      }
-      token
-    }
-  }
-`;
-
-// Mutation to save news for a user
-export const SAVE_NEWS = gql`
-  mutation saveNews($saveNews: NewsInput!) {
-    saveNews(saveNews: $saveNews) {
-      currentUser {
-        _id
         email
-        savedNews {
-          newsId
-          title
-          summary
-          source_country
-          url
-          image
-          language
-          latest_publish_date
-        }
       }
       token
     }
   }
 `;
 
-// Mutation to delete news for a user
-export const DELETE_NEWS = gql`
-  mutation deleteNews($newsId: ID!) {
-    deleteNews(newsId: $newsId) {
-      _id
-      email
-      savedNews {
-        newsId
-        title
-        summary
-        source_country
-        url
-        image
-        language
-        latest_publish_date
-      }
-    }
-  }
-`;
 
 // Mutation to initiate the password reset process
 export const FORGOT_PASSWORD = gql`

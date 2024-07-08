@@ -2,7 +2,7 @@ import { useCurrentUserContext } from "../context/CurrentUser"; // Importing cus
 import Auth from "../utils/auth"; // Importing utility for authentication
 import { useMutation, useQuery } from "@apollo/client"; // Importing hooks for GraphQL queries and mutations
 import { QUERY_CURRENT_USER } from "../utils/queries"; // Importing GraphQL query for current user data
-import { DELETE_NEWS } from "../utils/mutations"; // Importing GraphQL mutation for deleting news
+
 import DashboardCard from "../components/User/dashboard-card"; // Importing DashboardCard component
 import Footer from "../components/Common/Footer"
 

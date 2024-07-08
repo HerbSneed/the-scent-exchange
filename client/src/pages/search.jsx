@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import SearchBar from "../components/Common/search-bar.jsx";
 import SearchResultsCard from "../components/Common/search-results-card.jsx";
 import { useMutation, useQuery } from "@apollo/client";
-import { SAVE_NEWS } from "../utils/mutations.js";
+
 import { QUERY_CURRENT_USER } from "../utils/queries.js";
 import { useCurrentUserContext } from "../context/CurrentUser.jsx";
 import axios from "axios";

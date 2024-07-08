@@ -1,64 +1,44 @@
-// Import necessary modules
 const path = require('path');
 const express = require('express');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
 const { authMiddleware } = require('./middleware/auth');
-const cors = require('cors');
 const compression = require('compression');
+
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 
-// Import GraphQL schema and resolvers
 const { typeDefs, resolvers } = require('./schemas');
 
-// Import database connection
 const db = require('./config/connection');
 
-// Set up port
-const PORT = process.env.PORT || 3003;
-
-// Initialize Express app
+const PORT = process.env.PORT || 3001;
 const app = express();
 
-// Create ApolloServer instance with schema and resolvers
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+
 });
 
-// Base URL for the app
 const BASE_URL = process.env.NODE_ENV === 'production' ? '' : `http://localhost:${PORT}`;
 
-// Middleware setup
-app.use(compression()); // Enable compression
-app.use('/public', express.static(path.join(__dirname, 'client', 'dist'))); // Serve static files
+app.use(compression());
+app.use('/public', express.static(path.join(__dirname, 'client', 'dist')));
 
 // Start Apollo Server
 const startApolloServer = async () => {
-  await server.start(); // Start Apollo Server
+  await server.start();
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json());
 
-  app.use(cors()); // Enable CORS
-  app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
-  app.use(express.json()); // Parse JSON bodies
-
-  // Routes 
-  app.use('/api/users', userRoutes);
+  // app.use('/api/users', userRoutes);
   app.use('/api/products', productRoutes);
+  app.use('/api/user', userRoutes);
 
-  // Set up Apollo Server middleware for GraphQL endpoint with authentication
   app.use('/graphql', expressMiddleware(server, { context: authMiddleware }));
 
-  // Serve static assets and handle client-side routing
-  if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../client/dist'))); // Serve static assets
-    // Handle all other requests by serving the index.html of the client app
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-    });
-  }
 
-  // Database event handlers
   db.on('error', (error) => {
     console.error('MongoDB connection error:', error);
   });

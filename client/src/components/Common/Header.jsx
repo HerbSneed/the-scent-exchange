@@ -4,7 +4,6 @@ import { toggleSidebar } from "../../utils/sidebarUtils";
 import logo from "../../assets/images/US-Chronical.webp";
 import sidebarIcon from "../../assets/images/sidebar-icon.webp";
 import search from "../../assets/images/search-icon.webp";
-import { AppBar, Toolbar, Typography } from "@material-ui/core";
 
 const Header = ({ setIsSidebarOpen }) => {
   const [searchQuery, setSearchQuery] = useState("");
