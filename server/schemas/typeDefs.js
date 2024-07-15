@@ -1,19 +1,59 @@
 const typeDefs = `#graphql
 
 type User {
-  _id: ID!
-  email: String!
-  userName: String!
-  password: String!
+  _id: ID
+  email: String
+  userName: String
+  password: String
   profilePicture: String
-  ratings: [Rating] # Assuming ratings is an array of Rating objects
+  userProducts: [Product]
 }
 
-type Rating {
-  userId: String
+type Product {
+  _id: ID
+  ownerId: User
+  productName: String
+  description: String
+  image: String
+  bottle: Boolean
+  bottleSize: String
+  decant: Boolean
+  decantSize: String
+  price: String
+  trade: Boolean
+  productRating: [ProductRating]
+}
+
+input ProductInput {
+  productId: ID!
+  productName: String
+  description: String
+  image: String
+  bottle: Boolean
+  bottleSize: String
+  decant: Boolean
+  decantSize: String
+  price: String
+  trade: Boolean
+}
+
+type UserRating {
+  _id: ID!
+  raterId: [User]
   rating: Float
   comment: String
+  userId: User
 }
+
+# Define ProductRating Type
+type ProductRating {
+  _id: ID!
+  raterId: [User]
+  rating: Float
+  comment: String
+  productId: Product
+}
+
 
 type Auth {
   token: String!
@@ -23,13 +63,13 @@ type Auth {
 # Query type definition
 type Query {
   currentUser(email: String!): User
-  user(id: ID!): User
 }
 
 # Mutation type definition
 type Mutation {
   registerUser(email: String!, userName: String!, password: String!, profilePicture: String ): Auth
   login(email: String!, password: String!): Auth
+  createProduct(productInput: ProductInput!): Auth
 }
 `;
 

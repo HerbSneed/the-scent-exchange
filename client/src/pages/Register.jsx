@@ -22,14 +22,6 @@ const Register = () => {
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
-    try {
-      let variables = {
-        email: formState.email,
-        userName: formState.userName,
-        password: formState.password,
-        confirmPassword: formState.confirmPassword,
-        profilePicture: formState.profilePicture,
-      };
     const fieldErrors = {};
 
     if (formState.password !== formState.confirmPassword) {
@@ -38,9 +30,13 @@ const Register = () => {
 
     setErrors(fieldErrors);
 
-    if (Object.keys(fieldErrors).length > 0) {
-      return;
-    }
+    try {
+      let variables = {
+        email: formState.email,
+        userName: formState.userName,
+        password: formState.password,
+        profilePicture: formState.profilePicture,
+      };
 
     const mutationResponse = await registerUser({
       variables, 
@@ -49,16 +45,16 @@ const Register = () => {
     const { token, currentUser } = mutationResponse.data.registerUser;
 
     loginUser(currentUser, token);
-      navigate('/dashboard');
+    navigate('/');
     } catch (e) {
       // eslint-disable-next-line no-console
       console.log(e);
     }
   };
 
-    const handleChange = event => {
-    const { name, value } = event.target;
-    setFormState({ ...formState, [name]: value });
+  const handleChange = (event) => {
+    const { name, value, files } = event.target;
+    setFormState({ ...formState, [name]: files ? files[0] : value });
   };
 
 

@@ -1,7 +1,6 @@
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toggleSidebar } from "../../utils/sidebarUtils";
-import logo from "../../assets/images/US-Chronical.webp";
 import sidebarIcon from "../../assets/images/sidebar-icon.webp";
 import search from "../../assets/images/search-icon.webp";
 
@@ -88,13 +87,9 @@ const Header = ({ setIsSidebarOpen }) => {
           rel="preload"
           onClick={() => console.log("Homepage icon clicked")}
         >
-          <img
-            src={logo}
-            className="w-[120px] sm:w-36"
-            alt="American Chronicle Logo"
-            loading="lazy"
-            rel="preload"
-          />
+          <h1 className="font-bold">
+            The Scent Exchange
+          </h1>
         </Link>
 
         <Link to="/search" rel="preload">

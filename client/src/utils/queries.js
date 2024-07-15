@@ -7,14 +7,19 @@ export const QUERY_CURRENT_USER = gql`
       _id
       email
       userName
-      profilePicture
-      ratings {
-        userId
-        rating
-        comment
-      }    
+      userProducts {
+        productName
+        description
+        image 
+        bottleSize 
+        decantSize
+        price
+        trade
+      }
     }
   }
 `;
 
-// Query to get news
+// Query to get product
+
+

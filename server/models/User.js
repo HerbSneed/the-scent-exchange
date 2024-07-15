@@ -3,13 +3,37 @@ const bcrypt = require('bcryptjs');
 
 // Define User Schema
 const userSchema = new Schema({
-  userName: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  profilePicture: { type: String, required: false },
-  ratings: [{ userId: String, rating: Number, comment: String }],
-  products: [{ type: Schema.Types.ObjectId, ref: 'Product' }] // Reference to Product model
-});
+  userName: { 
+    type: String, 
+    required: true, 
+    unique: true 
+  },
+  email: { 
+    type: String, 
+    required: true, 
+    unique: true 
+  },
+  password: { 
+    type: String, 
+    required: true 
+  },
+  profilePicture: { 
+    type: String, 
+    required: false 
+  },
+  productsPurchased: [{
+    type: Schema.Types.ObjectId, 
+    ref: 'Product'
+  }],
+  userRatings: [{
+    type: Schema.Types.ObjectId,
+    ref: 'UserRating'
+  }],
+  userProducts: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Product'
+  }]
+}, { timestamps: true });
 
 // Hash password before saving to database
 userSchema.pre('save', async function (next) {

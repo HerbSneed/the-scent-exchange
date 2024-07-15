@@ -2,15 +2,24 @@
 const Product = require('../models/Product');
 
 module.exports = {
-    createProduct: async (req, res) => {
-        const { ownerId, name, description, image, price } = req.body;
-        try {
-            const product = await Product.create({ ownerId, name, description, image, price });
-            res.status(201).json(product);
-        } catch (error) {
-            res.status(500).json({ message: error.message });
-        }
-    },
+    createProduct: async (parent, { productInput }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError("User not authenticated");
+            }
+            const product = await Product.create({
+                ...productInput,
+                ownerId: context.user._id,
+            });
+            const updatedUser = await User.findByIdAndUpdate(
+                { _id: context.user._id },
+                { $addToSet: { userProducts: product._id } },
+                { new: true, runValidators: true }
+            );
+            const token = signToken(updatedUser);
+            return { token, currentUser: updatedUser };
+        },
+
+
 
     getProducts: async (req, res) => {
         try {

@@ -6,7 +6,7 @@ const productSchema = new Schema({
         type: Schema.Types.ObjectId, 
         ref: 'User'
     },
-    name: { 
+    productName: { 
         type: String, 
         required: true 
     },
@@ -17,12 +17,35 @@ const productSchema = new Schema({
     image: { 
         type: String 
     },
-    price: { 
-        type: Number, 
+    bottle: {
+        type: Boolean,
         required: true 
     },
-    ratings: [{ userId: String, rating: Number, comment: String }],
-});
+    bottleSize: {
+        type: String,
+        required: false
+    },
+    decant: {
+        type: Boolean,
+        required: true
+    },
+    decantSize: {
+        type: Number,
+        required: false
+    },
+    price: {
+        type: Number,
+        required: true
+    },
+    trade: {
+        type: Boolean,
+        required: true,
+    },
+    productRating: {
+        type: Schema.Types.ObjectId,
+        ref: 'ProductRating'
+    }
+}, { timestamps: true });
 
 const Product = model("Product", productSchema);
 

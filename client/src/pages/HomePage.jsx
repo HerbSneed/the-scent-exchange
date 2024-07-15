@@ -6,8 +6,8 @@ import { useWindowSize } from "../utils/windowSize";
 import { useCurrentUserContext } from "../context/CurrentUser";
 import { QUERY_CURRENT_USER } from "../utils/queries";
 import Footer from "../components/Common/Footer";
-import HeadlineCard from "../components/Common/headline-card";
-import MoreHeadlinesCard from "../components/Common/more-headlines-card";
+import FeaturedProductCard from "../components/Product/featured-products-card";
+import MoreProductsCard from "../components/Product/more-products-card";
 import CategoryHeader from "../components/Common/Category-Header";
 import ProductCard from "../components/Product/ProductCard";
 
@@ -42,13 +42,11 @@ const Homepage = () => {
 
   const userData = data?.currentUser || null;
   const categories = [
-    "Top News",
-    "Business",
-    "Entertainment",
-    "Health",
-    "Science",
-    "Sports",
-    "Technology",
+    "Top Sellers",
+    "Male Fragrances",
+    "Female Fragrances",
+    "Unisex Fragrances",
+    "Influencers"
   ];
 
   const handleCategoryChange = (category) => {
@@ -57,144 +55,6 @@ const Homepage = () => {
   };
 
 
-  const fetchUserHeadlines = async (category) => {
-    try {
-      const response = await get(`/api/userheadlines?category=${category}`);
-      return response;
-    } catch (error) {
-      console.error("Error fetching user headlines:", error);
-      return null;
-    }
-  };
-
-  const fetchCategoryHeadlines = async (category) => {
-    try {
-      const response = await get(`/api/categoryheadlines?category=${category}`);
-      return response;
-    } catch (error) {
-      console.error("Error fetching category headlines:", error);
-      return null;
-    }
-  };
-
-  const handleResponse = (response) => {
-    if (response && response.status === 200) {
-      const headlines = response.data;
-
-      if (!headlines || !headlines.articles) {
-        console.error("Invalid response format:", headlines);
-        return;
-      }
-
-      if (!isLoggedIn()) {
-        navigate("/");
-      }
-
-      const filteredNewsData = headlines.articles
-        .filter(
-          (news) =>
-            news.urlToImage !== null &&
-            news.url !== null &&
-            news.title !== "[Removed]" &&
-            news.status !== "410" &&
-            news.status !== "404"
-        )
-        .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
-        .reduce((accumulator, currentNews) => {
-          const newsId =
-            currentNews.publishedAt +
-            currentNews.title +
-            currentNews.source_country;
-          if (!accumulator.some((news) => news.newsId === newsId)) {
-            accumulator.push({
-              newsId: newsId,
-              title: currentNews.title,
-              image: currentNews.urlToImage,
-              url: currentNews.url,
-              summary: currentNews.description || "Summary not available.",
-              source_country: currentNews.source.name,
-              latest_publish_date: formatDateTime(currentNews.publishedAt),
-            });
-          }
-          return accumulator;
-        }, []);
-
-      setNewsItems(filteredNewsData);
-    } else {
-      console.error("Invalid response:", response);
-    }
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        let response;
-
-        if (queryParams.has("link")) {
-          const link = queryParams.get("link");
-          setSelectedCategory(link);
-          response = await fetchNewsByLink(link);
-        } else if (!isLoggedIn()) {
-          response = await fetchUsHeadlines();
-          console.log(response);
-        } else if (userData?.userDefaultNews && !queryParams.has("category")) {
-          const userCategory = userData.userDefaultNews;
-          setSelectedCategory(userCategory);
-          response = await fetchUserHeadlines(userData.userDefaultNews);
-        } else if (userData?.userDefaultNews && queryParams.has("category")) {
-          const category = queryParams.get("category");
-          if (category === "Top News") {
-            response = await fetchUsHeadlines();
-          } else {
-            setSelectedCategory(category);
-            response = await fetchCategoryHeadlines(selectedCategory);
-          }
-        } else {
-          return;
-        }
-
-        if (response) {
-          handleResponse(response);
-        } else {
-          console.error("Fetch function returned null");
-        }
-      } catch (err) {
-        console.error("Error in fetchData:", err);
-      }
-    };
-
-    fetchData();
-  }, [userData, isLoggedIn, selectedCategory, get, navigate]);
-
-  const handleSaveArticle = (news) => {
-    const alreadySaved = userData.savedNews.some((savedNews) => {
-      return savedNews.newsId === news.newsId;
-    });
-
-    if (alreadySaved) {
-      alert("News already saved");
-      return;
-    }
-
-    saveNewsMutation({
-      variables: {
-        saveNews: {
-          newsId: news.newsId,
-          title: news.title,
-          summary: news.summary,
-          source_country: news.source_country,
-          url: news.url,
-          image: news.image,
-          language: news.language,
-          latest_publish_date: news.latest_publish_date,
-        },
-      },
-    })
-      .then(() => {})
-      .catch((error) => {
-        console.error(error);
-      });
-  };
 
 
   return (
@@ -212,21 +72,10 @@ const Homepage = () => {
           className="grid grid-cols-1 2xl:w-7/12 xl:w-8/12 lg:w-8/12 lg:float-right 2xl:float-right gap-x-2 xl:gap-y-4  gap-y-0 pb-3 mx-3 2xl:mx-3 bg-white"
         >
           <h1>Featured Products</h1>
-          <div>
-            {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
-            ))}
-          </div>
 
-          {newsItems.slice(0, sliceEnd).map((news) => (
-            <HeadlineCard
-              key={news.newsId}
-              news={news}
-              handleSaveArticle={handleSaveArticle}
-              currentUser={currentUser}
-              isLoggedIn={isLoggedIn}
-            />
-          ))}
+
+        <FeaturedProductCard/>
+     
         </section>
 
         <section id="more-news-hl" className="grid grid-cols-1 mx-3 mb-2">
@@ -250,14 +99,9 @@ const Homepage = () => {
             More {selectedCategory} Headlines
           </h2>
 
-          {newsItems.slice(sliceEnd, moreNewsSliceEnd).map((news) => (
-            <MoreHeadlinesCard
-              key={news.newsId}
-              news={news}
-              handleSaveArticle={handleSaveArticle}
-              isLoggedIn={isLoggedIn}
-            />
-          ))}
+          
+          <MoreProductsCard/>
+   
         </section>
       </div>
 

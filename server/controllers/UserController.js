@@ -4,9 +4,9 @@ const User = require('../models/User');
 module.exports = {
 
     createUser: async (req, res) => {
-        const { email, userName, password, profilePicture } = req.body;
+        const { userName, email, password, profilePicture, productsPurched, userRatings } = req.body;
         try {
-            const user = await User.create({ email, userName, password, profilePicture });
+            const user = await User.create({ userName, email, password, profilePicture, productsPurched, userRatings });
             res.status(200).json(user);
         } catch (error) {
             res.status(500).json({ message: error.message });

@@ -7,9 +7,9 @@ const { secret, expiration } = require('./constants');
 // Export JWT token signing function
 module.exports = {
   // Function to sign JWT token with user data
-  signToken({ email, firstName, lastName, _id }) {
+  signToken({ email, userName, _id }) {
     // Create payload with user data
-    const payload = { email, firstName, lastName, _id };
+    const payload = { email, userName, _id };
     // Sign JWT token with payload, secret, and expiration
     return jwt.sign({ data: payload }, secret, { expiresIn: expiration });
   },
