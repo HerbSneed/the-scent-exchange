@@ -10,6 +10,11 @@ const productSchema = new Schema({
         type: String, 
         required: true 
     },
+
+    gender: {
+        type: String,
+        required: true,
+    },
     description: { 
         type: String, 
         required: true 
@@ -30,7 +35,7 @@ const productSchema = new Schema({
         required: true
     },
     decantSize: {
-        type: Number,
+        type: String,
         required: false
     },
     price: {

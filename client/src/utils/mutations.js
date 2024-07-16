@@ -37,26 +37,26 @@ export const REGISTER_USER = gql`
 `;
 
 export const CREATE_PRODUCT = gql`
-  mutation createProduct($createProduct: ProductInput!) {
-    createProduct(createProduct: $createProduct) {
-      currentUser {
+  mutation createProduct($productInput: ProductInput!) {
+    createProduct(productInput: $productInput) {
+      _id
+      productName
+      gender
+      description
+      image
+      bottle
+      bottleSize
+      decant
+      decantSize
+      price
+      trade
+      ownerId {
         _id
         email
-        userProducts {
-          productName
-          description
-          image
-          bottle
-          bottleSize
-          decant
-          decantSize
-          price
-          trade
+        userName
         }
       }
-      token
     }
-  }
 `;
 
 

@@ -5,41 +5,40 @@ import { useCurrentUserContext } from "../../context/CurrentUser";
 import { QUERY_CURRENT_USER } from "../../utils/queries";
 
 const CreateNewProduct = () => {
-  const [createProduct, { error }] = useMutation(CREATE_PRODUCT);
+  const [createProduct, { data: mutationData, loading: mutationLoading, error: mutationError }] = useMutation(CREATE_PRODUCT);
   const { currentUser } = useCurrentUserContext();
 
   const {
-    data,
-    loading,
+    data: queryData,
+    loading: queryLoading,
     error: queryError,
   } = useQuery(QUERY_CURRENT_USER, {
     variables: { email: currentUser.email }, // Pass current user's email as a variable
   });
 
   useEffect(() => {
-    if (loading) {
+    if (queryLoading) {
       console.log("Loading data...");
     } else if (queryError) {
       console.error("Error fetching data:", queryError);
     } else {
-      console.log("Fetched data:", data);
+      console.log("Fetched data:", queryData);
     }
-  }, [loading, queryError, data]);
+  }, [queryLoading, queryError, queryData]);
 
-  const userData = data?.currentUser || null;
-
-
+  const userData = queryData?.currentUser || null;
 
   const [productState, setProductState] = useState({
     productName: "",
     description: "",
+    gender: "",
     image: null,
-    bottle: "",
+    bottle: false,
     bottleSize: "",
-    decant: "",
+    decant: false,
     decantSize: "",
     price: "",
-    trade: "",
+    trade: false,
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,15 +48,20 @@ const CreateNewProduct = () => {
     try {
       const result = await createProduct({
         variables: {
-          productName: productState.productName,
-          description: productState.description,
-          image: productState.image,
-          bottle: productState.bottle,
-          bottleSize: productState.bottleSize,
-          decant: productState.decant,
-          decantSize: productState.decantSize,
-          price: productState.price,
-          trade: productState.trade,
+          productInput: {
+            productName: productState.productName,
+            gender: productState.gender,
+            description: productState.description,
+            image: productState.image,
+            bottle: productState.category === "Bottle",
+            bottleSize:
+              productState.category === "Bottle" ? productState.bottleSize : "",
+            decant: productState.category === "Decant",
+            decantSize:
+              productState.category === "Decant" ? productState.decantSize : "",
+            price: parseFloat(productState.price),
+            trade: productState.trade === "true",
+          },
         },
       });
       const newProduct = result.data.createProduct;
@@ -69,10 +73,10 @@ const CreateNewProduct = () => {
   };
 
   const handleChange = (event) => {
-    const { name, value } = event.target;
+    const { name, value, type, checked } = event.target;
     setProductState({
       ...productState,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -153,6 +157,28 @@ const CreateNewProduct = () => {
                       required
                     />
                   </div>
+
+                  <div className="col-span-2 sm:col-span-1">
+                    <label
+                      htmlFor="gender"
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Gender
+                    </label>
+                    <select
+                      id="gender"
+                      name="gender"
+                      value={productState.gender}
+                      onChange={handleChange}
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Unisex">Unisex</option>
+                    </select>
+                  </div>
+
                   <div className="col-span-2 sm:col-span-1">
                     <label
                       htmlFor="price"
@@ -195,7 +221,7 @@ const CreateNewProduct = () => {
                       htmlFor="category"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
-                      Category
+                      Bottle or Decant
                     </label>
                     <select
                       id="category"
@@ -209,6 +235,47 @@ const CreateNewProduct = () => {
                       <option value="Decant">Decant</option>
                     </select>
                   </div>
+
+                  {productState.category === "Bottle" && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label
+                        htmlFor="bottleSize"
+                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Bottle Size
+                      </label>
+                      <input
+                        type="text"
+                        name="bottleSize"
+                        value={productState.bottleSize}
+                        onChange={handleChange}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                        placeholder="Enter bottle size"
+                        required
+                      />
+                    </div>
+                  )}
+
+                  {productState.category === "Decant" && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label
+                        htmlFor="decantSize"
+                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Decant Size
+                      </label>
+                      <input
+                        type="text"
+                        name="decantSize"
+                        value={productState.decantSize}
+                        onChange={handleChange}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                        placeholder="Enter decant size"
+                        required
+                      />
+                    </div>
+                  )}
+
                   <div className="col-span-2">
                     <label
                       htmlFor="description"

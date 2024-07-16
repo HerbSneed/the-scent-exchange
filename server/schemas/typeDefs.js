@@ -13,27 +13,27 @@ type Product {
   _id: ID
   ownerId: User
   productName: String
+  gender: String
   description: String
   image: String
   bottle: Boolean
   bottleSize: String
   decant: Boolean
   decantSize: String
-  price: String
+  price: Float
   trade: Boolean
-  productRating: [ProductRating]
 }
 
 input ProductInput {
-  productId: ID!
   productName: String
+  gender: String
   description: String
   image: String
   bottle: Boolean
   bottleSize: String
   decant: Boolean
   decantSize: String
-  price: String
+  price: Float
   trade: Boolean
 }
 
@@ -69,7 +69,7 @@ type Query {
 type Mutation {
   registerUser(email: String!, userName: String!, password: String!, profilePicture: String ): Auth
   login(email: String!, password: String!): Auth
-  createProduct(productInput: ProductInput!): Auth
+  createProduct(productInput: ProductInput!): Product
 }
 `;
 

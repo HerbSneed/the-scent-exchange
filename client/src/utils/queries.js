@@ -9,6 +9,7 @@ export const QUERY_CURRENT_USER = gql`
       userName
       userProducts {
         productName
+        gender
         description
         image 
         bottleSize 

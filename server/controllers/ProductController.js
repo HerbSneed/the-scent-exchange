@@ -1,5 +1,6 @@
 // server/controllers/ProductController.js
 const Product = require('../models/Product');
+const User = require('../models/User');
 
 module.exports = {
     createProduct: async (parent, { productInput }, context) => {
