@@ -11,6 +11,7 @@ import MoreProductsCard from "../components/Product/more-products-card";
 import CategoryHeader from "../components/Common/Category-Header";
 import ProductCard from "../components/Product/ProductCard";
 
+
 const Homepage = () => {
   const [products, setProducts] = useState([]);
   const { get } = axios;
@@ -22,25 +23,19 @@ const Homepage = () => {
   const [selectedCategory, setSelectedCategory] = useState("Top News");
 
 
-  const sliceEnd =
-    width >= 1536 ? 4 : width >= 1280 ? 4 : width >= 1024 ? 2 : 1;
-  const moreNewsSliceEnd =
-    width >= 1536 ? 35 : width >= 1280 ? 35 : width >= 1024 ? 25 : 15;
-
   const { data } = useQuery(QUERY_CURRENT_USER, {
     variables: { email: currentUser.email },
   });
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      const res = await axios.get("/api/products");
-      setProducts(res.data);
-    };
+  // useEffect(() => {
+  //   const fetchProducts = async () => {
+  //     const res = await axios.get("/api/products");
+  //     setProducts(res.data);
+  //   };
 
-    fetchProducts();
-  }, []);
+  //   fetchProducts();
+  // }, []);
 
-  const userData = data?.currentUser || null;
   const categories = [
     "Top Sellers",
     "Male Fragrances",

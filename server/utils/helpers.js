@@ -46,6 +46,17 @@ const sendResetEmail = async (email, token, BASE_URL) => {
   }
 };
 
+const uploadToCloudinary = async (file) => {
+  try {
+    const result = await cloudinary.uploader.upload(stream, {
+      upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
+    });
+    return result.secure_url; // Return the secure URL of the uploaded image
+  } catch (error) {
+    throw new Error(`Error uploading image to Cloudinary: ${error.message}`);
+  }
+};
+
 // Function to generate a reset token
 const generateResetToken = () => crypto.randomBytes(20).toString("hex");
 
@@ -54,4 +65,5 @@ module.exports = {
   generateResetToken,
   sendResetEmail,
   hashPassword,
+  uploadToCloudinary,
 };

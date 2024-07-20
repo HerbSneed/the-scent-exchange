@@ -1,39 +1,42 @@
+
+
 const typeDefs = `#graphql
+
+scalar Upload
 
 type User {
   _id: ID
   email: String
   userName: String
-  password: String
   profilePicture: String
   userProducts: [Product]
 }
 
 type Product {
-  _id: ID
-  ownerId: User
-  productName: String
+  _id: ID!
+  productName: String!
   gender: String
-  description: String
+  description: String!
   image: String
   bottle: Boolean
   bottleSize: String
   decant: Boolean
   decantSize: String
-  price: Float
+  price: Float!
   trade: Boolean
+  ownerId: User
 }
 
 input ProductInput {
-  productName: String
+  productName: String!
   gender: String
-  description: String
+  description: String!
   image: String
   bottle: Boolean
   bottleSize: String
   decant: Boolean
   decantSize: String
-  price: Float
+  price: Float!
   trade: Boolean
 }
 
@@ -69,7 +72,7 @@ type Query {
 type Mutation {
   registerUser(email: String!, userName: String!, password: String!, profilePicture: String ): Auth
   login(email: String!, password: String!): Auth
-  createProduct(productInput: ProductInput!): Product
+  createProduct(productInput: ProductInput!, imageFile: Upload): Product
 }
 `;
 

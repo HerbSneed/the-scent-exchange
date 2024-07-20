@@ -3,9 +3,12 @@ import { useMutation, useQuery } from "@apollo/client";
 import { CREATE_PRODUCT } from "../../utils/mutations";
 import { useCurrentUserContext } from "../../context/CurrentUser";
 import { QUERY_CURRENT_USER } from "../../utils/queries";
+import axios from "axios";
+
 
 const CreateNewProduct = () => {
-  const [createProduct, { data: mutationData, loading: mutationLoading, error: mutationError }] = useMutation(CREATE_PRODUCT);
+  const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT);
+
   const { currentUser } = useCurrentUserContext();
 
   const {
@@ -26,7 +29,6 @@ const CreateNewProduct = () => {
     }
   }, [queryLoading, queryError, queryData]);
 
-  const userData = queryData?.currentUser || null;
 
   const [productState, setProductState] = useState({
     productName: "",
@@ -41,44 +43,93 @@ const CreateNewProduct = () => {
     trade: false,
   });
 
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleCreateProduct = async (event) => {
     event.preventDefault();
+
+    let imageUrl = "";
+    if (productState.image) {
+      const formData = new FormData();
+      formData.append("file", productState.image);
+      formData.append(
+        "upload_preset",
+        process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET
+      );
+      formData.append(
+        "cloud_name",
+        process.env.REACT_APP_CLOUDINARY_CLOUD_NAME
+      );
+      try {
+        const response = await axios.post(
+          `https://api.cloudinary.com/v1_1/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          formData
+        );
+        imageUrl = response.data.secure_url;
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        return; // Exit early if image upload fails
+      }
+    }
+
     try {
-      const result = await createProduct({
-        variables: {
-          productInput: {
-            productName: productState.productName,
-            gender: productState.gender,
-            description: productState.description,
-            image: productState.image,
-            bottle: productState.category === "Bottle",
-            bottleSize:
-              productState.category === "Bottle" ? productState.bottleSize : "",
-            decant: productState.category === "Decant",
-            decantSize:
-              productState.category === "Decant" ? productState.decantSize : "",
-            price: parseFloat(productState.price),
-            trade: productState.trade === "true",
-          },
+      let variables = {
+        productInput: {
+          productName: productState.productName,
+          gender: productState.gender,
+          description: productState.description,
+          image: imageUrl,
+          bottle: productState.bottle === "Bottle",
+          bottleSize:
+            productState.bottle === "Bottle" ? productState.bottleSize : "",
+          decant: productState.bottle === "Decant",
+          decantSize:
+            productState.bottle === "Decant" ? productState.decantSize : "",
+          price: parseFloat(productState.price),
+          trade: productState.trade,
         },
-      });
-      const newProduct = result.data.createProduct;
-      console.group("New Product created:", newProduct);
-      setIsModalOpen(false); // Close modal after product creation
+      };
+
+
+    console.log("GraphQL variables:", variables); // Log to verify
+
+    const newProduct = await createProduct({
+      variables,
+      refetchQueries: [
+        { query: QUERY_CURRENT_USER, variables: { email: currentUser.email } },
+      ],
+    });
+
+
+      if (newProduct?.data?.createProduct) {
+        console.log("New Product created:", newProduct.data.createProduct);
+        setIsModalOpen(false); 
+      } else {
+        console.error("New Product is null:", newProduct);
+      }
     } catch (err) {
       console.error("Error creating product:", err);
     }
   };
 
-  const handleChange = (event) => {
-    const { name, value, type, checked } = event.target;
+const handleChange = (event) => {
+  const { name, value, type, checked } = event.target;
+  if (name === "bottle") {
+    // Reset bottleSize and decantSize when category changes
+    setProductState({
+      ...productState,
+      [name]: value,
+      bottleSize: "",
+      decantSize: "",
+    });
+  } else {
     setProductState({
       ...productState,
       [name]: type === "checkbox" ? checked : value,
     });
-  };
+  }
+};
 
   const handleFileChange = (event) => {
     setProductState({
@@ -199,44 +250,25 @@ const CreateNewProduct = () => {
 
                   <div className="col-span-2 sm:col-span-1">
                     <label
-                      htmlFor="trade"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Available for Trade
-                    </label>
-                    <select
-                      id="trade"
-                      name="trade"
-                      value={productState.trade}
-                      onChange={handleChange}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                    >
-                      <option value="false">No</option>
-                      <option value="true">Yes</option>
-                    </select>
-                  </div>
-
-                  <div className="col-span-2 sm:col-span-1">
-                    <label
-                      htmlFor="category"
+                      htmlFor="bottle"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Bottle or Decant
                     </label>
                     <select
-                      id="category"
-                      name="category"
-                      value={productState.category}
+                      id="bottle"
+                      name="bottle"
+                      value={productState.bottle}
                       onChange={handleChange}
                       className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                     >
-                      <option value="">Select category</option>
+                      <option value="">Select Bottle or Decant</option>
                       <option value="Bottle">Bottle</option>
                       <option value="Decant">Decant</option>
                     </select>
                   </div>
 
-                  {productState.category === "Bottle" && (
+                  {productState.bottle === "Bottle" && (
                     <div className="col-span-2 sm:col-span-1">
                       <label
                         htmlFor="bottleSize"
@@ -249,14 +281,13 @@ const CreateNewProduct = () => {
                         name="bottleSize"
                         value={productState.bottleSize}
                         onChange={handleChange}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                        placeholder="Enter bottle size"
-                        required
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                        placeholder="Size of bottle"
                       />
                     </div>
                   )}
 
-                  {productState.category === "Decant" && (
+                  {productState.bottle === "Decant" && (
                     <div className="col-span-2 sm:col-span-1">
                       <label
                         htmlFor="decantSize"
@@ -269,9 +300,8 @@ const CreateNewProduct = () => {
                         name="decantSize"
                         value={productState.decantSize}
                         onChange={handleChange}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                        placeholder="Enter decant size"
-                        required
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                        placeholder="Size of decant"
                       />
                     </div>
                   )}
@@ -281,60 +311,62 @@ const CreateNewProduct = () => {
                       htmlFor="description"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
-                      Product Description
+                      Description
                     </label>
                     <textarea
-                      id="description"
-                      rows="4"
                       name="description"
                       value={productState.description}
                       onChange={handleChange}
-                      className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                      placeholder="Write product description here"
-                    ></textarea>
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                      placeholder="Type product description"
+                      required
+                    />
                   </div>
 
-                  <label
-                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    htmlFor="user_avatar"
-                  >
-                    Upload file
-                  </label>
-                  <input
-                    name="image"
-                    onChange={handleFileChange}
-                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-                    aria-describedby="user_avatar_help"
-                    id="user_avatar"
-                    type="file"
-                  />
-                  <div
-                    className="mt-1 text-sm text-gray-500 dark:text-gray-300"
-                    id="user_avatar_help"
-                  >
-                    A product picture is useful for customers to verify the
-                    product.
+                  <div className="col-span-2">
+                    <label
+                      htmlFor="image"
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Image
+                    </label>
+                    <input
+                      type="file"
+                      name="image"
+                      onChange={handleFileChange}
+                      className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                      required
+                    />
+                  </div>
+
+                  <div className="col-span-2 flex items-center">
+                    <label
+                      htmlFor="trade"
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Trade
+                    </label>
+                    <input
+                      type="checkbox"
+                      name="trade"
+                      checked={productState.trade}
+                      onChange={handleChange}
+                      className="ml-2 w-5 h-5 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
                   </div>
                 </div>
-
                 <button
                   type="submit"
-                  className="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                  disabled={loading}
+                  className="text-white bg-blue-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-500 dark:hover:bg-primary-600 dark:focus:ring-primary-700"
                 >
-                  <svg
-                    className="me-1 -ms-1 w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                      clipRule="evenodd"
-                    ></path>
-                  </svg>
-                  Add new product
+                  {loading ? "Creating..." : "Create Product"}
                 </button>
+                {error && (
+                  <div className="mt-3 text-red-500">
+                    Error creating product: {error.message}
+                  </div>
+                )}
               </form>
             </div>
           </div>
