@@ -6,11 +6,20 @@ const productSchema = new Schema({
         type: Schema.Types.ObjectId, 
         ref: 'User'
     },
+    productBrand: {
+        type: String,
+        required: true
+    },
+
     productName: { 
         type: String, 
         required: true 
     },
 
+    concentration: {
+        type: String,
+        required: true
+    },
     gender: {
         type: String,
         required: true,
@@ -18,6 +27,10 @@ const productSchema = new Schema({
     description: { 
         type: String, 
         required: true 
+    },
+    productURL: {
+        type: String,
+        required: false
     },
     image: { 
         type: String,

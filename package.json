@@ -37,6 +37,7 @@
     "node-html-parser": "^6.1.12",
     "nodemailer": "^6.9.14",
     "react": "^18.2.0",
+    "react-avatar-editor": "^13.0.2",
     "react-bootstrap": "^2.8.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.3",

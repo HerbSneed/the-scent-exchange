@@ -1,6 +1,5 @@
 import { useCurrentUserContext } from "../context/CurrentUser"; // Importing custom hook to access current user data
-import Auth from "../utils/auth"; // Importing utility for authentication
-import { useMutation, useQuery } from "@apollo/client"; // Importing hooks for GraphQL queries and mutations
+import { useQuery } from "@apollo/client"; // Importing hooks for GraphQL queries and mutations
 import { QUERY_CURRENT_USER } from "../utils/queries";
 import UserProductCard from "../components/User/userProductCard";
 import CreateNewProduct from "../components/Product/CreateProduct";
@@ -9,12 +8,14 @@ import Footer from "../components/Common/Footer";
 // Dashboard component
 const Dashboard = () => {
   const { currentUser } = useCurrentUserContext();
-  console.log("current user", currentUser);
 
   // Query to fetch current user data
-  const { data } = useQuery(QUERY_CURRENT_USER, {
+  const { loading, error, data } = useQuery(QUERY_CURRENT_USER, {
     variables: { email: currentUser.email },
   });
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error.message}</p>;
 
   const userData = data?.currentUser || null;
   console.log("UserData", userData);
@@ -25,6 +26,7 @@ const Dashboard = () => {
         key={userData?.email}
         className="relative bg-white border-t-[1px] border-gray-400 min-h-screen px-5 mx-auto w-[100%]"
       >
+
         {/* Dashboard header */}
         <h1 className="text-center text-3xl xl:text-4xl font-[newsReader] font-bold p-3 mt-1 drop-shadow-lg text-blue-600">
           {userData?.userName}&apos;s Dashboard

@@ -3,12 +3,23 @@ import { useState, useEffect } from "react";
 import { toggleSidebar } from "../../utils/sidebarUtils";
 import sidebarIcon from "../../assets/images/sidebar-icon.webp";
 import search from "../../assets/images/search-icon.webp";
+import { useCurrentUserContext } from "../../context/CurrentUser"; 
+import { useQuery } from "@apollo/client";
+import { QUERY_CURRENT_USER } from "../../utils/queries";
 
 const Header = ({ setIsSidebarOpen }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const [isRed, setIsRed] = useState(false);
+
+  const { currentUser } = useCurrentUserContext();
+
+  const { loading, error, data } = useQuery(QUERY_CURRENT_USER, {
+    variables: { email: currentUser.email },
+  });
+
+  const userData = data?.currentUser || null;
 
   // Function to handle toggling the sidebar
   const handleSidebarToggle = (event) => {
@@ -94,8 +105,8 @@ const Header = ({ setIsSidebarOpen }) => {
 
         <Link to="/search" rel="preload">
           <img
-            src={search}
-            className="w-[30px] sm:w-8"
+            src={userData?.profilePicture}
+            className="w-[40px] h-[40px] sm:w-8  rounded-[200px]"
             alt="Search Icon"
             onClick={handleSearch}
           />

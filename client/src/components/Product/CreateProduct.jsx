@@ -1,22 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import { CREATE_PRODUCT } from "../../utils/mutations";
 import { useCurrentUserContext } from "../../context/CurrentUser";
 import { QUERY_CURRENT_USER } from "../../utils/queries";
 import axios from "axios";
+import AvatarEditor from "react-avatar-editor";
 
 
 const CreateNewProduct = () => {
-  const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT);
-
+  const [createProduct, { loading: mutationLoading, error: mutationError }] = useMutation(CREATE_PRODUCT);
   const { currentUser } = useCurrentUserContext();
+  const editorRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  const [error, setErrors] = useState({});
 
   const {
     data: queryData,
     loading: queryLoading,
     error: queryError,
-  } = useQuery(QUERY_CURRENT_USER, {
-    variables: { email: currentUser.email }, // Pass current user's email as a variable
+    } = useQuery(QUERY_CURRENT_USER, {
+    variables: { email: currentUser.email },
   });
 
   useEffect(() => {
@@ -31,8 +34,11 @@ const CreateNewProduct = () => {
 
 
   const [productState, setProductState] = useState({
+    productBrand: "",
     productName: "",
+    concentration: "",
     description: "",
+    productURL: "",
     gender: "",
     image: null,
     bottle: false,
@@ -50,12 +56,13 @@ const CreateNewProduct = () => {
     event.preventDefault();
 
     let imageUrl = "";
-    if (productState.image) {
+    if (productState.image && editorRef.current) {
+      const canvas = editorRef.current.getImageScaledToCanvas().toDataURL();
       const formData = new FormData();
-      formData.append("file", productState.image);
+      formData.append("file", canvas);
       formData.append(
         "upload_preset",
-        process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET
+        process.env.REACT_APP_CLOUDINARY_PRODUCT_UPLOAD_PRESET
       );
       formData.append(
         "cloud_name",
@@ -69,6 +76,7 @@ const CreateNewProduct = () => {
         imageUrl = response.data.secure_url;
       } catch (error) {
         console.error("Error uploading image:", error);
+        setErrors({ ...error, image: "Image upload failed" });
         return; // Exit early if image upload fails
       }
     }
@@ -76,9 +84,12 @@ const CreateNewProduct = () => {
     try {
       let variables = {
         productInput: {
+          productBrand: productState.productBrand,
           productName: productState.productName,
+          concentration: productState.concentration,
           gender: productState.gender,
           description: productState.description,
+          productURL: productState.productURL,
           image: imageUrl,
           bottle: productState.bottle === "Bottle",
           bottleSize:
@@ -91,45 +102,35 @@ const CreateNewProduct = () => {
         },
       };
 
+      const newProduct = await createProduct({
+        variables,
+      });
 
-    console.log("GraphQL variables:", variables); // Log to verify
-
-    const newProduct = await createProduct({
-      variables,
-      refetchQueries: [
-        { query: QUERY_CURRENT_USER, variables: { email: currentUser.email } },
-      ],
-    });
-
-
-      if (newProduct?.data?.createProduct) {
-        console.log("New Product created:", newProduct.data.createProduct);
-        setIsModalOpen(false); 
-      } else {
-        console.error("New Product is null:", newProduct);
+        if (newProduct?.data?.createProduct) {
+          setIsModalOpen(false); 
+        } else {
+          console.error("New Product is null:", newProduct);
+        }
+      } catch (err) {
+        console.error("Error creating product:", err);
       }
-    } catch (err) {
-      console.error("Error creating product:", err);
+    };
+
+  const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
+
+    if (type === "radio") {
+      setProductState({
+        ...productState,
+        [name]: value,
+      });
+    } else {
+      setProductState({
+        ...productState,
+        [name]: type === "checkbox" ? checked : value,
+      });
     }
   };
-
-const handleChange = (event) => {
-  const { name, value, type, checked } = event.target;
-  if (name === "bottle") {
-    // Reset bottleSize and decantSize when category changes
-    setProductState({
-      ...productState,
-      [name]: value,
-      bottleSize: "",
-      decantSize: "",
-    });
-  } else {
-    setProductState({
-      ...productState,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  }
-};
 
   const handleFileChange = (event) => {
     setProductState({
@@ -146,7 +147,7 @@ const handleChange = (event) => {
         className="block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
         type="button"
       >
-        Toggle modal
+        New Product
       </button>
 
       {/* Main modal */}
@@ -191,6 +192,26 @@ const handleChange = (event) => {
               {/* Modal body */}
               <form className="p-4 md:p-5" onSubmit={handleCreateProduct}>
                 <div className="grid gap-4 mb-4 grid-cols-2">
+                  {/* Product Brand */}
+                  <div className="col-span-2">
+                    <label
+                      htmlFor="productBrand"
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      name="productBrand"
+                      value={productState.productBrand}
+                      onChange={handleChange}
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full"
+                      placeholder="Type product name"
+                      required
+                    />
+                  </div>
+
+                  {/* Product Name */}
                   <div className="col-span-2">
                     <label
                       htmlFor="name"
@@ -203,51 +224,184 @@ const handleChange = (event) => {
                       name="productName"
                       value={productState.productName}
                       onChange={handleChange}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full"
                       placeholder="Type product name"
                       required
                     />
                   </div>
 
-                  <div className="col-span-2 sm:col-span-1">
-                    <label
-                      htmlFor="gender"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Gender
-                    </label>
-                    <select
-                      id="gender"
-                      name="gender"
-                      value={productState.gender}
-                      onChange={handleChange}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Unisex">Unisex</option>
-                    </select>
+                  {/* Concentration */}
+                  <div className="flex flex-wrap">
+                    <h2>Concentration</h2>
+
+                    <div className="flex items-center me-4">
+                      <input
+                        id="aftershave-radio"
+                        type="radio"
+                        name="concentration"
+                        value="Aftershave"
+                        checked={productState.concentration === "Aftershave"}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="aftershave-radio"
+                        className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        Aftershave
+                      </label>
+                    </div>
+                    <div className="flex items-center me-4">
+                      <input
+                        id="EauFraiche-radio"
+                        type="radio"
+                        name="concentration"
+                        value="Eau Fraiche"
+                        checked={productState.concentration === "Eau Fraiche"}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="EauFraiche-radio"
+                        className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        Eau Fraiche
+                      </label>
+                    </div>
+                    <div className="flex items-center me-4">
+                      <input
+                        id="Eau-de-Cologne-radio"
+                        type="radio"
+                        name="concentration"
+                        value="Eau de Cologne"
+                        checked={
+                          productState.concentration === "Eau de Cologne"
+                        }
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="Eau-de-Cologne-radio"
+                        className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        Eau de Cologne
+                      </label>
+                    </div>
+                    <div className="flex items-center me-4">
+                      <input
+                        id="Eau-de-Toilet-radio"
+                        type="radio"
+                        name="concentration"
+                        value="Eau de Toilette"
+                        checked={
+                          productState.concentration === "Eau de Toilette"
+                        }
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="Eau-de-Toilet-radio"
+                        className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-500"
+                      >
+                        Eau de Toilette
+                      </label>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        id="Eau-de-Parfum-radio"
+                        type="radio"
+                        name="concentration"
+                        value="Eau de Parfum"
+                        checked={productState.concentration === "Eau de Parfum"}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="Eau-de-Parfum-radio"
+                        className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-500"
+                      >
+                        Eau de Parfum
+                      </label>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        id="Parfum-radio"
+                        type="radio"
+                        name="concentration"
+                        value="Parfum"
+                        checked={productState.concentration === "Parfum"}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="Parfum-radio"
+                        className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-500"
+                      >
+                        Parfum
+                      </label>
+                    </div>
                   </div>
 
-                  <div className="col-span-2 sm:col-span-1">
-                    <label
-                      htmlFor="price"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Price
-                    </label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={productState.price}
-                      onChange={handleChange}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="$2999"
-                      required
-                    />
+                  {/* Gender */}
+                  <div className="flex flex-col">
+                    <h2>Gender</h2>
+
+                    <div className="flex items-center me-4">
+                      <input
+                        id="Male-radio"
+                        type="radio"
+                        name="gender"
+                        value="Male"
+                        checked={productState.gender === "Male"}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="Male-radio"
+                        className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        Male
+                      </label>
+                    </div>
+                    <div className="flex items-center me-4">
+                      <input
+                        id="Female-radio"
+                        type="radio"
+                        name="gender"
+                        value="Female"
+                        checked={productState.gender === "Female"}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="Female-radio"
+                        className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        Female
+                      </label>
+                    </div>
+                    <div className="flex items-center me-4">
+                      <input
+                        id="Unisex-radio"
+                        type="radio"
+                        name="gender"
+                        value="Unisex"
+                        checked={productState.gender === "Unisex"}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="Unisex-radio"
+                        className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        Unisex
+                      </label>
+                    </div>
                   </div>
 
+                  {/* Bottle */}
                   <div className="col-span-2 sm:col-span-1">
                     <label
                       htmlFor="bottle"
@@ -260,7 +414,7 @@ const handleChange = (event) => {
                       name="bottle"
                       value={productState.bottle}
                       onChange={handleChange}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full"
                     >
                       <option value="">Select Bottle or Decant</option>
                       <option value="Bottle">Bottle</option>
@@ -281,7 +435,7 @@ const handleChange = (event) => {
                         name="bottleSize"
                         value={productState.bottleSize}
                         onChange={handleChange}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full"
                         placeholder="Size of bottle"
                       />
                     </div>
@@ -300,12 +454,32 @@ const handleChange = (event) => {
                         name="decantSize"
                         value={productState.decantSize}
                         onChange={handleChange}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full"
                         placeholder="Size of decant"
                       />
                     </div>
                   )}
 
+                  {/* Price */}
+                  <div className="col-span-2 sm:col-span-1">
+                    <label
+                      htmlFor="price"
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Price
+                    </label>
+                    <input
+                      type="number"
+                      name="price"
+                      value={productState.price}
+                      onChange={handleChange}
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full"
+                      placeholder="$2999"
+                      required
+                    />
+                  </div>
+
+                  {/* Description */}
                   <div className="col-span-2">
                     <label
                       htmlFor="description"
@@ -317,9 +491,26 @@ const handleChange = (event) => {
                       name="description"
                       value={productState.description}
                       onChange={handleChange}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full"
                       placeholder="Type product description"
                       required
+                    />
+                  </div>
+
+                  {/* Product URL*/}
+                  <div className="col-span-2">
+                    <label
+                      htmlFor="productURL"
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Product URL
+                    </label>
+                    <input
+                      name="productURL"
+                      value={productState.productURL}
+                      onChange={handleChange}
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg px-4 focus:ring-primary-600 focus:border-primary-600 block w-full"
+                      placeholder="ex. Fragantica, Basenotes, Parfumo"
                     />
                   </div>
 
@@ -334,9 +525,31 @@ const handleChange = (event) => {
                       type="file"
                       name="image"
                       onChange={handleFileChange}
-                      className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                      className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50"
                       required
                     />
+                    {productState.image && (
+                      <div>
+                        <AvatarEditor
+                          ref={editorRef}
+                          image={productState.image}
+                          width={500}
+                          height={500}
+                          borderRadius={100}
+                          color={[255, 255, 255, 0.6]}
+                          scale={scale}
+                          rotate={0}
+                        />
+                        <input
+                          type="range"
+                          value={scale}
+                          min="1"
+                          max="2"
+                          step="0.01"
+                          onChange={(e) => setScale(parseFloat(e.target.value))}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="col-span-2 flex items-center">
@@ -351,18 +564,18 @@ const handleChange = (event) => {
                       name="trade"
                       checked={productState.trade}
                       onChange={handleChange}
-                      className="ml-2 w-5 h-5 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      className="ml-2 w-5 h-5 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-primary-500"
                     />
                   </div>
                 </div>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="text-white bg-blue-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-500 dark:hover:bg-primary-600 dark:focus:ring-primary-700"
+                  disabled={mutationLoading}
+                  className="text-white bg-blue-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-500"
                 >
-                  {loading ? "Creating..." : "Create Product"}
+                  {mutationLoading ? "Creating..." : "Create Product"}
                 </button>
-                {error && (
+                {mutationError && (
                   <div className="mt-3 text-red-500">
                     Error creating product: {error.message}
                   </div>

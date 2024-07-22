@@ -1,22 +1,23 @@
-
-
 const typeDefs = `#graphql
 
 scalar Upload
 
 type User {
-  _id: ID
-  email: String
-  userName: String
+  _id: ID!
+  email: String!
+  userName: String!
   profilePicture: String
   userProducts: [Product]
 }
 
 type Product {
   _id: ID!
+  productBrand: String!
   productName: String!
+  concentration: String!
   gender: String
   description: String!
+  productURL: String
   image: String
   bottle: Boolean
   bottleSize: String
@@ -29,8 +30,11 @@ type Product {
 
 input ProductInput {
   productName: String!
+  productBrand: String!
+  concentration: String!
   gender: String
   description: String!
+  productURL: String
   image: String
   bottle: Boolean
   bottleSize: String
@@ -65,12 +69,13 @@ type Auth {
 
 # Query type definition
 type Query {
-  currentUser(email: String!): User
+  currentUser(email: String!, profilePicture: String): User
+  products: [Product]!
 }
 
 # Mutation type definition
 type Mutation {
-  registerUser(email: String!, userName: String!, password: String!, profilePicture: String ): Auth
+  registerUser(email: String!, userName: String!, password: String!, profilePicture: String!, imageFile: Upload): Auth
   login(email: String!, password: String!): Auth
   createProduct(productInput: ProductInput!, imageFile: Upload): Product
 }

@@ -7,10 +7,15 @@ export const QUERY_CURRENT_USER = gql`
       _id
       email
       userName
+      profilePicture
       userProducts {
+        _id
+        productBrand
         productName
+        concentration
         gender
         description
+        productURL
         image 
         bottleSize 
         decantSize

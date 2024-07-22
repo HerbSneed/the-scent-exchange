@@ -19,7 +19,7 @@ const userSchema = new Schema({
   },
   profilePicture: { 
     type: String, 
-    required: false 
+    required: true 
   },
   productsPurchased: [{
     type: Schema.Types.ObjectId, 

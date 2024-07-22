@@ -9,6 +9,7 @@ export const LOGIN_USER = gql`
         _id
         email
         userName
+        profilePicture
       }
     }
   }
@@ -20,7 +21,7 @@ export const REGISTER_USER = gql`
     $userName: String!
     $email: String!
     $password: String!
-    $profilePicture: String
+    $profilePicture: String!
   ) {
     registerUser(
       userName: $userName
@@ -29,7 +30,9 @@ export const REGISTER_USER = gql`
       profilePicture: $profilePicture
     ) {
       currentUser {
+        userName
         email
+        profilePicture
       }
       token
     }
@@ -40,9 +43,12 @@ export const CREATE_PRODUCT = gql`
   mutation createProduct($productInput: ProductInput!) {
     createProduct(productInput: $productInput) {
       _id
+      productBrand
       productName
+      concentration
       gender
       description
+      productURL
       image
       bottle
       bottleSize
@@ -54,6 +60,7 @@ export const CREATE_PRODUCT = gql`
         _id
         email
         userName
+        profilePicture
         }
       }
     }

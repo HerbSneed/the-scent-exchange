@@ -14,8 +14,8 @@ const Search = () => {
   // State for search query, news items, and save news mutation
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("latest");
-  const [newsItems, setNewsItems] = useState([]);
-  const [saveNewsMutation] = useMutation(SAVE_NEWS);
+ 
+
 
   // Current user data from context
   const { currentUser } = useCurrentUserContext();

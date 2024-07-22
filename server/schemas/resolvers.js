@@ -18,18 +18,47 @@ const resolvers = {
         throw new Error(`Failed to fetch current user: ${error}`);
       }
     },
+
+    products: async (parent, { userName }) => {
+      const params = userName ? { userName } : {};
+      return await Product.find(params).populate('ownerId');
+    }
   },
 
+
+  Product: {
+    ownerId: async (product) => {
+      return await User.findById(product.ownerId);
+    }
+  },
+
+
+
   Mutation: {
-    registerUser: async (parent, { email, userName, password, profilePicture }) => {
-      const user = await User.create({
-        email,
-        userName,
-        password,
-        profilePicture,
-      });
-      const token = signToken(user);
-      return { token, currentUser: user };
+    registerUser: async (parent, { email, userName, password, profilePicture, imageFile }) => {
+
+      let imageUrl = profilePicture;
+      try {
+        if (imageFile) {
+          const { createReadStream } = await imageFile;
+          const stream = createReadStream();
+          imageUrl = await uploadToCloudinary(stream, "profile");
+        }
+
+        const user = await User.create({
+          profilePicture: imageUrl,
+          email,
+          userName,
+          password,
+          
+        });
+
+        const token = signToken(user);
+        return { token, currentUser: user };
+      } catch (error) {
+        console.error("Error creating User:", error);
+        throw new Error("Failed to create user");
+      }
     },
 
     login: async (parent, { email, password }) => {
@@ -53,41 +82,37 @@ const resolvers = {
       let imageUrl = null;
       try {
         if (imageFile) {
-          // Assuming imageFile is a GraphQL Upload scalar
           const { createReadStream } = await imageFile;
           const stream = createReadStream();
-          imageUrl = await uploadToCloudinary(stream); // Function to upload image to Cloudinary
+          imageUrl = await uploadToCloudinary(stream, "product");
         }
 
-        // Create the new product
         const product = await Product.create({
           image: imageUrl,
           ...productInput,
-          ownerId: context.user._id, // Ensure ownerId is set
+          ownerId: context.user._id,
         });
 
-        // Update the user to include the new product in their list of products
-        const updatedUser = await User.findByIdAndUpdate(
+        await User.findByIdAndUpdate(
           context.user._id,
           { $addToSet: { userProducts: product._id } },
           { new: true, runValidators: true }
         );
 
-        const token = signToken(updatedUser);
+        const token = signToken(context.user);
 
         return {
-          token, 
-          currentUser: updatedUser,  
-          ...product.toObject(), 
+          token,
+          currentUser: context.user,
+          ...product.toObject(),
           _id: product._id.toString()
-        }
+        };
       } catch (error) {
         console.error("Error creating product:", error);
         throw new Error("Failed to create product");
       }
     },
-  }
-
+  },
 };
 
 module.exports = resolvers;

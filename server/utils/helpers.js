@@ -46,16 +46,33 @@ const sendResetEmail = async (email, token, BASE_URL) => {
   }
 };
 
-const uploadToCloudinary = async (file) => {
+const uploadToCloudinary = async (file, presetType) => {
+
+  let uploadPreset;
+
+  if(presetType === 'product') {
+    uploadPreset = process.env.REACT_APP_CLOUDINARY_PRODUCT_UPLOAD_PRESET;
+  } else if(presetType === 'profile') {
+    uploadPreset = process.env.REACT_APP_CLOUDINARY_USER_PROFILE_UPLOAD_PRESET;
+  } else {
+    throw new Error('Invalid preset type')
+  }
+
   try {
-    const result = await cloudinary.uploader.upload(stream, {
-      upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
-    });
-    return result.secure_url; // Return the secure URL of the uploaded image
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+
+    const response = await axios.post(
+      `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
+      formData
+    );
+    return response.data.secure_url; // Return the secure URL of the uploaded image
   } catch (error) {
     throw new Error(`Error uploading image to Cloudinary: ${error.message}`);
   }
 };
+
 
 // Function to generate a reset token
 const generateResetToken = () => crypto.randomBytes(20).toString("hex");
